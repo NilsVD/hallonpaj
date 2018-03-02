@@ -35,24 +35,56 @@ bottom = 16
 #	lcd.message(disp)
 #	time.sleep(1.0)
 display = [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']
+print('display: ' + "".join(display))
+def DisplayScroll(display):
+	k=0
+	j=0
+	while True:
+		if display[k]==' ' and k<=14:
+			k += 1
+		else:
+			pos = k
+			print("k= " + str(k))
+			while j<k:
+				lcd.clear()
+				scrollDisp = display[:]
+				print("Display= " + "".join(display))
+				scrollDisp[j]= 'O'
+				lcd.message("".join(scrollDisp))
+				print("K====: " + "".join(scrollDisp))
+				time.sleep(0.1)
+				j += 1
+			return;
+	
 def DisplayInput(display):
 	i = 0
-	print(i)
-	while True:
-		if display[i] == ' ' and i <= 15:
+	while i<=15:
+		if display[i] == ' ' and i <= 14:
 			print('i= ' + str(i))
 			i += 1
-		else:
-			print('else')
+		elif i==15 and display[i]==' ':
+			print("i==15 och i:" + str(i))
 			display[i]='O'
+			i += 1
+		else:
+			print("i<15 och i:" + str(i))
+			nr = i-1
+			display[nr]='O'
+			i += 1 
 	return display;
-print('message: ' + DisplayInput(display))
-for k in range (0, 15):
-	lcd.clear()
-	message = " ".join([str(x) for x in DisplayInput(display)])
-	print('message: ' + message)
-	lcd.message(message)
-	time.sleep(1.0)
+while True:
+	enter = raw_input("Enter: ")
+	if enter == "e":
+		lcd.clear()
+		DisplayScroll(display)
+		lcd.message("".join(DisplayInput(display)))
+		time.sleep(1.0)
+#for k in range (0, 15):
+#	lcd.clear()
+#	message = " ".join([str(x) for x in DisplayInput(display)])
+#	print('message: ' + message)
+#	lcd.message(message)
+#	time.sleep(1.0)
 
 #for i in range(lcd_columns-len('O')):
 #	time.sleep(0.25)
