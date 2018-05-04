@@ -1,3 +1,4 @@
+from __future__ import division
 from tkinter import *
 import time
 import math
@@ -10,6 +11,40 @@ cBcY = 300							# Center Base centerY
 circleBaseCenter = (cBcX, cBcY)
 lengthBase = 108*1.5
 lengthArm = 110*1.5
+
+# Import the PCA9685 module.
+import Adafruit_PCA9685
+#pwm = Adafruit_PCA9685.PCA9685()
+
+# Configure min and max servo pulse lengths
+servo_min = 150  #Min pulse length out of 4096
+servo_max = 650  # Max pulse length out of 4096
+
+# Helper function to make setting a servo pulse width simpler.
+def set_servo_pulse(channel, pulse):
+    pulse_length = 1000000    # 1,000,000 us per second
+    pulse_length //= 60       # 60 Hz
+    print('{0}us per period'.format(pulse_length))
+    pulse_length //= 4096     # 12 bits of resolution
+    print('{0}us per bit'.format(pulse_length))
+    pulse *= 1000
+    pulse //= pulse_length
+    #pwm.set_pwm(channel, 0, pulse)
+
+def move_base_servo(angleBaseDeg):
+    pwm_pulse = (servo_max-servo_min)/180*angleBaseDeg+servo_min
+    #pwm.set_pwm(0, 0, pwm_pulse)
+    print("moving Robot base to: pwm " + str(pwm_pulse))
+    time.sleep(0.1)
+
+def move_arm_servo(angleArmDeg):
+    pwm_pulse = (servo_max-servo_min)/180*angleArmDeg+servo_min
+    #pwm.set_pwm(1, 0, pwm_pulse)
+    print("moving Robot arm to: pwm " + str(pwm_pulse))
+    time.sleep(0.1)
+
+# Set frequency to 60hz, good for servos.
+#pwm.set_pwm_freq(60)
 
 # ---- Classes ------
 def sliderActivate(GUI):
@@ -29,6 +64,7 @@ class startGUI:
         self.mX = 0
         self.mY = 0
         self.drawModeBoolean = False
+        self.robotModeBoolean = False
         self.graphics = []
         self.lastClick = []
 
@@ -46,6 +82,9 @@ class startGUI:
         self.drawModeButtonBG = "gray86"
         self.drawModeButton = Button(self.buttonCanvas, text="Draw", background=self.drawModeButtonBG, command= lambda: self.drawMode())        
         self.drawModeButton.grid(row=5, column=0)
+        self.robotModeButtonBG = "gray86"
+        self.robotModeButton = Button(self.buttonCanvas, text="Robot", background=self.robotModeButtonBG, command= lambda: self.robotMode())        
+        self.robotModeButton.grid(row=6, column=0)
         self.lineSlider = Scale(self.buttonCanvas, from_=0, to=180, command= lambda x: self.getSliderValues())
         self.lineSlider.set(self.angleBaseDeg)
         self.lineSlider.grid(row=2, column=0)
@@ -141,6 +180,11 @@ class startGUI:
         self.updateGUIAngles(self.angleBaseDeg, self.angleArmDeg)
         self.updateShapes()
         self.draw()
+        if (self.robotModeBoolean):
+            move_base_servo(self.angleBaseDeg)
+            print("moving Robot base to: angle " + str(self.angleBasedeg))
+            move_arm_servo(self.angleArmDeg)
+            
             
     def displayHelpLines(self):
         if (not(self.displayBoolean)):
@@ -162,6 +206,16 @@ class startGUI:
            self.drawModeButtonBG = "gray86"
            self.drawModeButton.config(background=self.drawModeButtonBG)
            self.drawModeBoolean = False
+
+    def robotMode(self):
+       if (not(self.robotModeBoolean)):
+           self.robotModeButtonBG = "CadetBlue1"
+           self.robotModeButton.config(background=self.robotModeButtonBG)
+           self.robotModeBoolean = True
+       else:
+           self.robotModeButtonBG = "gray86"
+           self.robotModeButton.config(background=self.robotModeButtonBG)
+           self.robotModeBoolean = False
 
     def updateGUIAngles(self, angleBaseDeg, angleArmDeg):
         self.angleBaseDeg = angleBaseDeg
