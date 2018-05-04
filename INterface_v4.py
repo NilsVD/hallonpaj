@@ -1,5 +1,5 @@
 from __future__ import division
-from tkinter import *
+from Tkinter import *
 import time
 import math
 
@@ -14,7 +14,7 @@ lengthArm = 110*1.5
 
 # Import the PCA9685 module.
 import Adafruit_PCA9685
-#pwm = Adafruit_PCA9685.PCA9685()
+pwm = Adafruit_PCA9685.PCA9685()
 
 # Configure min and max servo pulse lengths
 servo_min = 150  #Min pulse length out of 4096
@@ -29,22 +29,22 @@ def set_servo_pulse(channel, pulse):
     print('{0}us per bit'.format(pulse_length))
     pulse *= 1000
     pulse //= pulse_length
-    #pwm.set_pwm(channel, 0, pulse)
+    pwm.set_pwm(channel, 0, pulse)
 
 def move_base_servo(angleBaseDeg):
-    pwm_pulse = (servo_max-servo_min)/180*angleBaseDeg+servo_min
-    #pwm.set_pwm(0, 0, pwm_pulse)
+    pwm_pulse = int((servo_max-servo_min)/180*angleBaseDeg+servo_min)
+    pwm.set_pwm(0, 0, pwm_pulse)
     print("moving Robot base to: pwm " + str(pwm_pulse))
     time.sleep(0.1)
 
 def move_arm_servo(angleArmDeg):
-    pwm_pulse = (servo_max-servo_min)/180*angleArmDeg+servo_min
-    #pwm.set_pwm(1, 0, pwm_pulse)
+    pwm_pulse = int((servo_min-servo_max)/180*angleArmDeg+servo_max)
+    pwm.set_pwm(1, 0, pwm_pulse)
     print("moving Robot arm to: pwm " + str(pwm_pulse))
     time.sleep(0.1)
 
 # Set frequency to 60hz, good for servos.
-#pwm.set_pwm_freq(60)
+pwm.set_pwm_freq(60)
 
 # ---- Classes ------
 def sliderActivate(GUI):
@@ -144,14 +144,14 @@ class startGUI:
         Y = startY + dy
         print("move to X = " + str(X) + " move to Y Y = " + str(Y))
         print("move to (int) X = " + str(int(round(X))) + " move to (int) Y = " + str(int(round(Y))))
-##        while(int(round(X)) != newX or int(round(Y)) != newY):
-##            self.moveToXY(int(round(X)), int(round(Y)))
-##            X += dx
-##            Y += dy
-##            #self.moveToXY(int(round(X)), int(round(Y)))
-##            print("new X = " + str(X) + " new Y = " + str(Y))
-##            print("new X (int) = " + str(int(round(X))) + " new Y = " + str(int(round(Y))))
-##            time.sleep(0.05)
+        while(int(round(X)) != newX or int(round(Y)) != newY):
+            self.moveToXY(int(round(X)), int(round(Y)))
+            X += dx
+            Y += dy
+            #self.moveToXY(int(round(X)), int(round(Y)))
+            print("new X = " + str(X) + " new Y = " + str(Y))
+            print("new X (int) = " + str(int(round(X))) + " new Y = " + str(int(round(Y))))
+            time.sleep(0.05)
 
     def moveToXY(self, newX, newY):
         newX -= cBcX
@@ -182,7 +182,7 @@ class startGUI:
         self.draw()
         if (self.robotModeBoolean):
             move_base_servo(self.angleBaseDeg)
-            print("moving Robot base to: angle " + str(self.angleBasedeg))
+            print("moving Robot base to: angle " + str(self.angleBaseDeg))
             move_arm_servo(self.angleArmDeg)
             
             
