@@ -157,34 +157,49 @@ class startGUI:
         newX -= cBcX
         newY -= cBcY
         newY *= -1
-        print("newX = " + str(newX) + " newY = " + str(newY))
-        dist = float(math.sqrt(newX**2 + newY**2))
-        print("dist = " + str(dist))
-        angleBaseDummy = float(180/math.pi*math.asin(math.sin(math.acos((float(lengthBase)**2-dist**2+float(lengthArm)**2)/(2*lengthBase*lengthArm)))*float(lengthArm)/dist) + 180/math.pi*math.atan(newY/newX))
-        #angleBaseDummy = float(180/math.pi*math.acos((lengthBase**2+dist**2-lengthArm**2)/(2*lengthBase*dist)) + 180/math.pi*math.atan(newY/newX))
-        angleArmDummy = float(180/math.pi*math.acos((float(lengthBase)**2-dist**2+float(lengthArm)**2)/(2*lengthBase*lengthArm)))
-        #angleArmDummy = float(180/math.pi*math.acos((lengthBase**2-dist**2+lengthArm**2)/(2*lengthBase*dist)))
-        print("angleBaseDummy = " + str(angleBaseDummy) + " angleArmDummy = " + str(angleArmDummy))
-        if (angleBaseDummy > 90):
-            angleBaseDummy = float(180/math.pi*(math.atan(float(newY)/float(newX))-math.asin(math.sin(math.pi/180*angleArmDummy)*float(lengthArm)*dist)))
-            angleArmDummy = 360 - angleArmDummy
-        if (angleBaseDummy >= 0):
-            self.angleBaseDeg = int(angleBaseDummy + 0.5 + 90)
-        if (angleArmDummy >= 90):
-            #self.angleArmDeg = int(angleArmDummy + 0.5 - 90)
-            self.angleArmDeg = int(270 - angleArmDummy + 0.5)
-        if (angleBaseDummy < 0):
-            #self.angleBaseDeg = int(90 - angleBaseDummy - 0.5)
-            self.angleBaseDeg = int(90 + angleBaseDummy + 0.5)
-        print("angleBase = " + str(self.angleBaseDeg) + " angleArm = " + str(self.angleArmDeg))
-        self.updateGUIAngles(self.angleBaseDeg, self.angleArmDeg)
-        self.updateShapes()
-        self.draw()
-        if (self.robotModeBoolean):
-            move_base_servo(self.angleBaseDeg)
-            print("moving Robot base to: angle " + str(self.angleBaseDeg))
-            move_arm_servo(self.angleArmDeg)
-            
+        startX = self.cPcX - cBcX
+        startY = -1*(self.cPcY - cBcY)
+        distance_path = math.sqrt((newY - startY)**2 + (newX - startX)**2)
+        alpha = math.atan((newX - startX)/(newY - startY))
+        dx = 1.00*math.sin(alpha)
+        dy = 1.00*math.cos(alpha)
+        X = startX + dx
+        Y = startY + dy
+        continueBoolean = True
+        while(int(round(X)) != newX or int(round(Y)) != newY and continueBoolean):
+            if(not(self.drawModeBoolean)):
+                continueBoolean = False
+                X = newX
+                Y = newY
+                
+            dist = float(math.sqrt(X**2 + Y**2))
+            angleBaseDummy = float(180/math.pi*math.asin(math.sin(math.acos((float(lengthBase)**2-dist**2+float(lengthArm)**2)/(2*lengthBase*lengthArm)))*float(lengthArm)/dist) + 180/math.pi*math.atan(newY/newX))
+            #angleBaseDummy = float(180/math.pi*math.acos((lengthBase**2+dist**2-lengthArm**2)/(2*lengthBase*dist)) + 180/math.pi*math.atan(newY/newX))
+            angleArmDummy = float(180/math.pi*math.acos((float(lengthBase)**2-dist**2+float(lengthArm)**2)/(2*lengthBase*lengthArm)))
+            #angleArmDummy = float(180/math.pi*math.acos((lengthBase**2-dist**2+lengthArm**2)/(2*lengthBase*dist)))
+            print("angleBaseDummy = " + str(angleBaseDummy) + " angleArmDummy = " + str(angleArmDummy))
+            if (angleBaseDummy > 90):
+                angleBaseDummy = float(180/math.pi*(math.atan(float(newY)/float(newX))-math.asin(math.sin(math.pi/180*angleArmDummy)*float(lengthArm)*dist)))
+                angleArmDummy = 360 - angleArmDummy
+            if (angleBaseDummy >= 0):
+                self.angleBaseDeg = int(angleBaseDummy + 0.5 + 90)
+            if (angleArmDummy >= 90):
+                #self.angleArmDeg = int(angleArmDummy + 0.5 - 90)
+                self.angleArmDeg = int(270 - angleArmDummy + 0.5)
+            if (angleBaseDummy < 0):
+                #self.angleBaseDeg = int(90 - angleBaseDummy - 0.5)
+                self.angleBaseDeg = int(90 + angleBaseDummy + 0.5)
+            print("angleBase = " + str(self.angleBaseDeg) + " angleArm = " + str(self.angleArmDeg))
+            self.updateGUIAngles(self.angleBaseDeg, self.angleArmDeg)
+            self.updateShapes()
+            self.draw()
+            if (self.robotModeBoolean):
+                    move_base_servo(self.angleBaseDeg)
+                    print("moving Robot base to: angle " + str(self.angleBaseDeg))
+                    move_arm_servo(self.angleArmDeg)
+            X += dx
+            Y += dy
+                
             
     def displayHelpLines(self):
         if (not(self.displayBoolean)):
