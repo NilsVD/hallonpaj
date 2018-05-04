@@ -20,6 +20,9 @@ pwm = Adafruit_PCA9685.PCA9685()
 servo_min = 150  #Min pulse length out of 4096
 servo_max = 650  # Max pulse length out of 4096
 
+pen_servo_max = 500
+pen_servo_min = 300
+
 # Helper function to make setting a servo pulse width simpler.
 def set_servo_pulse(channel, pulse):
     pulse_length = 1000000    # 1,000,000 us per second
@@ -35,13 +38,17 @@ def move_base_servo(angleBaseDeg):
     pwm_pulse = int((servo_max-servo_min)/180*angleBaseDeg+servo_min)
     pwm.set_pwm(0, 0, pwm_pulse)
     print("moving Robot base to: pwm " + str(pwm_pulse))
-    time.sleep(0.1)
+    #time.sleep(0.1)
 
 def move_arm_servo(angleArmDeg):
     pwm_pulse = int((servo_min-servo_max)/180*angleArmDeg+servo_max)
     pwm.set_pwm(1, 0, pwm_pulse)
     print("moving Robot arm to: pwm " + str(pwm_pulse))
-    time.sleep(0.1)
+    #time.sleep(0.1)
+
+def move_pen_servo(PenPosition):
+    if(PenPosition <= pen_servo_max and PenPosition >= pen_servo_min):
+	pwm.set_pwm(2, 0, PenPosition)
 
 # Set frequency to 60hz, good for servos.
 pwm.set_pwm_freq(60)
@@ -61,20 +68,24 @@ class startGUI:
         self.angleBase = math.radians(self.angleBaseDeg)
         self.angleArm = math.radians(self.angleArmDeg)
 
+	self.PenPosition = 400
+	self.PenDownPosition = 400
+	self.PenUpPosition = 400
         self.mX = 0
         self.mY = 0
         self.drawModeBoolean = False
         self.robotModeBoolean = False
+	self.penActiveBoolean = False
         self.graphics = []
         self.lastClick = []
 
         self.buttonCanvas = Canvas(master, width=100, height=600)
         self.buttonCanvas.pack(side=TOP)
-
-        self.raiseButton = Button(self.buttonCanvas, text="Raise (+)", command= lambda: raiseFunction())
-        self.raiseButton.grid(row=0, column=0)
-        self.lowerButton = Button(self.buttonCanvas, text="Lower (-)", command= lambda: lowerFunction())
-        self.lowerButton.grid(row=1, column=0)
+	
+	self.setPenUpButton = Button(self.buttonCanvas, text="Set pen up", command= lambda: self.setPenUpFunc())
+        self.setPenUpButton.grid(row=0, column=0)
+        self.setPenDownButton = Button(self.buttonCanvas, text="Set pen down", command= lambda: self.setPenDownFunc())
+        self.setPenDownButton.grid(row=1, column=0)
         self.displayHelpButtonBG = "gray86"
         self.displayBoolean = False
         self.displayHelpButton = Button(self.buttonCanvas, text="Help lines", background=self.displayHelpButtonBG, command= lambda: self.displayHelpLines())        
@@ -83,14 +94,17 @@ class startGUI:
         self.drawModeButton = Button(self.buttonCanvas, text="Draw", background=self.drawModeButtonBG, command= lambda: self.drawMode())        
         self.drawModeButton.grid(row=5, column=0)
         self.robotModeButtonBG = "gray86"
-        self.robotModeButton = Button(self.buttonCanvas, text="Robot", background=self.robotModeButtonBG, command= lambda: self.robotMode())        
+        self.robotModeButton = Button(self.buttonCanvas, text="Robot", background=self.robotModeButtonBG, command= lambda: self.robotMode())
+	self.PenActivatedButtonBG = "gray86"
+	self.PenActivatedButton = Button(self.buttonCanvas, text="Pen", background=self.PenActivatedButtonBG, command= lambda: self.activatePen())
+	self.PenActivatedButton.grid(row=7, column=0)        
         self.robotModeButton.grid(row=6, column=0)
         self.lineSlider = Scale(self.buttonCanvas, from_=0, to=180, command= lambda x: self.getSliderValues())
         self.lineSlider.set(self.angleBaseDeg)
         self.lineSlider.grid(row=2, column=0)
-        self.lineSliderArm = Scale(self.buttonCanvas, from_=0, to=180, command= lambda x: self.getSliderValues())
-        self.lineSliderArm.set(self.angleArmDeg)
-        self.lineSliderArm.grid(row=3, column=0)
+        self.lineSliderPen = Scale(self.buttonCanvas, from_=pen_servo_min, to=pen_servo_max, command= lambda x: self.getPenSliderValue())
+        self.lineSliderPen.set(self.PenPosition)
+        self.lineSliderPen.grid(row=3, column=0)
 
         self.cAcX = self.cAcY = self.X_bt = self.Y_bt = self.X_bb = self.Y_bb = self.X_at = self.Y_at = self.X_ab = self.Y_ab = self.X_at2 = self.Y_at2 = self.X_ab2 = self.Y_ab2 = self.cPcX = self.cPcY = self.X_pt = self.Y_pt = self.X_pb = self.Y_pb = None
 
@@ -104,6 +118,33 @@ class startGUI:
         if (update):
             self.updateShapes()
             self.draw()
+
+    def getPenSliderValue(self):
+	update = False
+	if (self.lineSliderPen.get() != self.PenPosition):
+	    self.PenPosition = self.lineSliderPen.get()
+	    move_pen_servo(self.PenPosition)
+
+    def setPenUpFunc(self):
+	self.getPenSliderValue()
+	self.PenUpPosition = self.PenPosition
+
+    def setPenDownFunc(self):
+	self.getPenSliderValue()
+	self.PenDownPosition = self.PenPosition
+
+    def activatePen(self):
+	if (not(self.penActiveBoolean)):
+	    self.PenActivatedButtonBG = "CadetBlue1"
+	    self.PenActivatedButton.config(background=self.PenActivatedButtonBG)
+	    self.penActivateBoolean = True
+	    move_pen_servo(self.PenDownPosition)
+	else:
+	    self.PenActivatedButtonBG = "gray86"
+	    self.PenActivatedButton.config(background=self.PenActivatedButtonBG)
+	    self.penActivateBoolean = False
+	    move_pen_servo(self.PenUpPosition)
+	
     def mouseCallback(self, event):
         print("clicked at x: " + str(event.x) + " y: " + str(event.y))
         self.moveToXY(event.x, event.y)
@@ -171,15 +212,16 @@ class startGUI:
                 continueBoolean = False
                 X = newX
                 Y = newY
-                
+            
+	    print("X= " + str(X) + " Y= " + str(Y))
             dist = float(math.sqrt(X**2 + Y**2))
-            angleBaseDummy = float(180/math.pi*math.asin(math.sin(math.acos((float(lengthBase)**2-dist**2+float(lengthArm)**2)/(2*lengthBase*lengthArm)))*float(lengthArm)/dist) + 180/math.pi*math.atan(newY/newX))
+            angleBaseDummy = float(180/math.pi*math.asin(math.sin(math.acos((float(lengthBase)**2-dist**2+float(lengthArm)**2)/(2*lengthBase*lengthArm)))*float(lengthArm)/dist) + 180/math.pi*math.atan(Y/X))
             #angleBaseDummy = float(180/math.pi*math.acos((lengthBase**2+dist**2-lengthArm**2)/(2*lengthBase*dist)) + 180/math.pi*math.atan(newY/newX))
             angleArmDummy = float(180/math.pi*math.acos((float(lengthBase)**2-dist**2+float(lengthArm)**2)/(2*lengthBase*lengthArm)))
             #angleArmDummy = float(180/math.pi*math.acos((lengthBase**2-dist**2+lengthArm**2)/(2*lengthBase*dist)))
             print("angleBaseDummy = " + str(angleBaseDummy) + " angleArmDummy = " + str(angleArmDummy))
             if (angleBaseDummy > 90):
-                angleBaseDummy = float(180/math.pi*(math.atan(float(newY)/float(newX))-math.asin(math.sin(math.pi/180*angleArmDummy)*float(lengthArm)*dist)))
+                angleBaseDummy = float(180/math.pi*(math.atan(float(Y)/float(X))-math.asin(math.sin(math.pi/180*angleArmDummy)*float(lengthArm)*dist)))
                 angleArmDummy = 360 - angleArmDummy
             if (angleBaseDummy >= 0):
                 self.angleBaseDeg = int(angleBaseDummy + 0.5 + 90)
@@ -197,9 +239,10 @@ class startGUI:
                     move_base_servo(self.angleBaseDeg)
                     print("moving Robot base to: angle " + str(self.angleBaseDeg))
                     move_arm_servo(self.angleArmDeg)
-            X += dx
-            Y += dy
-                
+	    if(continueBoolean):
+            	X += dx
+            	Y += dy
+    
             
     def displayHelpLines(self):
         if (not(self.displayBoolean)):
